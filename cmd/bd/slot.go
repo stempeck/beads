@@ -100,9 +100,25 @@ func runSlotSet(cmd *cobra.Command, args []string) error {
 
 	ctx := rootCtx
 
-	// Resolve agent ID
+	// Resolve agent ID with routing support for cross-database lookups
 	var agentID string
-	if daemonClient != nil {
+	var agentResult *RoutedResult
+
+	if needsRouting(agentArg) {
+		// Cross-beads reference - resolve via routing
+		var err error
+		agentResult, err = resolveAndGetIssueWithRouting(ctx, store, agentArg)
+		if agentResult != nil {
+			defer agentResult.Close()
+		}
+		if err != nil {
+			return fmt.Errorf("failed to resolve agent %s: %w", agentArg, err)
+		}
+		if agentResult == nil || agentResult.Issue == nil {
+			return fmt.Errorf("failed to resolve agent %s: no issue found matching %q", agentArg, agentArg)
+		}
+		agentID = agentResult.ResolvedID
+	} else if daemonClient != nil {
 		resp, err := daemonClient.ResolveID(&rpc.ResolveIDArgs{ID: agentArg})
 		if err != nil {
 			return fmt.Errorf("failed to resolve agent %s: %w", agentArg, err)
@@ -151,7 +167,10 @@ func runSlotSet(cmd *cobra.Command, args []string) error {
 
 	// Get current agent bead to check cardinality
 	var agent *types.Issue
-	if daemonClient != nil {
+	if agentResult != nil && agentResult.Issue != nil {
+		// Already have the agent from routing
+		agent = agentResult.Issue
+	} else if daemonClient != nil {
 		resp, err := daemonClient.Show(&rpc.ShowArgs{ID: agentID})
 		if err != nil {
 			return fmt.Errorf("agent bead not found: %s", agentID)
@@ -177,8 +196,20 @@ func runSlotSet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("hook slot already occupied by %s; use 'bd slot clear %s hook' first", agent.HookBead, agentID)
 	}
 
-	// Update the slot
-	if daemonClient != nil {
+	// Update the slot - use routed store if available
+	if agentResult != nil && agentResult.Routed {
+		// Use routed store for update
+		updates := map[string]interface{}{}
+		switch slotName {
+		case "hook":
+			updates["hook_bead"] = beadID
+		case "role":
+			updates["role_bead"] = beadID
+		}
+		if err := agentResult.Store.UpdateIssue(ctx, agentID, updates, actor); err != nil {
+			return fmt.Errorf("failed to set slot: %w", err)
+		}
+	} else if daemonClient != nil {
 		updateArgs := &rpc.UpdateArgs{ID: agentID}
 		switch slotName {
 		case "hook":
@@ -236,9 +267,25 @@ func runSlotClear(cmd *cobra.Command, args []string) error {
 
 	ctx := rootCtx
 
-	// Resolve agent ID
+	// Resolve agent ID with routing support for cross-database lookups
 	var agentID string
-	if daemonClient != nil {
+	var agentResult *RoutedResult
+
+	if needsRouting(agentArg) {
+		// Cross-beads reference - resolve via routing
+		var err error
+		agentResult, err = resolveAndGetIssueWithRouting(ctx, store, agentArg)
+		if agentResult != nil {
+			defer agentResult.Close()
+		}
+		if err != nil {
+			return fmt.Errorf("failed to resolve agent %s: %w", agentArg, err)
+		}
+		if agentResult == nil || agentResult.Issue == nil {
+			return fmt.Errorf("failed to resolve agent %s: no issue found matching %q", agentArg, agentArg)
+		}
+		agentID = agentResult.ResolvedID
+	} else if daemonClient != nil {
 		resp, err := daemonClient.ResolveID(&rpc.ResolveIDArgs{ID: agentArg})
 		if err != nil {
 			return fmt.Errorf("failed to resolve agent %s: %w", agentArg, err)
@@ -256,7 +303,10 @@ func runSlotClear(cmd *cobra.Command, args []string) error {
 
 	// Get current agent bead to verify it's an agent
 	var agent *types.Issue
-	if daemonClient != nil {
+	if agentResult != nil && agentResult.Issue != nil {
+		// Already have the agent from routing
+		agent = agentResult.Issue
+	} else if daemonClient != nil {
 		resp, err := daemonClient.Show(&rpc.ShowArgs{ID: agentID})
 		if err != nil {
 			return fmt.Errorf("agent bead not found: %s", agentID)
@@ -277,9 +327,21 @@ func runSlotClear(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%s is not an agent bead (type=%s)", agentID, agent.IssueType)
 	}
 
-	// Clear the slot (set to empty string)
+	// Clear the slot (set to empty string) - use routed store if available
 	emptyStr := ""
-	if daemonClient != nil {
+	if agentResult != nil && agentResult.Routed {
+		// Use routed store for update
+		updates := map[string]interface{}{}
+		switch slotName {
+		case "hook":
+			updates["hook_bead"] = ""
+		case "role":
+			updates["role_bead"] = ""
+		}
+		if err := agentResult.Store.UpdateIssue(ctx, agentID, updates, actor); err != nil {
+			return fmt.Errorf("failed to clear slot: %w", err)
+		}
+	} else if daemonClient != nil {
 		updateArgs := &rpc.UpdateArgs{ID: agentID}
 		switch slotName {
 		case "hook":
@@ -329,9 +391,25 @@ func runSlotShow(cmd *cobra.Command, args []string) error {
 
 	ctx := rootCtx
 
-	// Resolve agent ID
+	// Resolve agent ID with routing support for cross-database lookups
 	var agentID string
-	if daemonClient != nil {
+	var agentResult *RoutedResult
+
+	if needsRouting(agentArg) {
+		// Cross-beads reference - resolve via routing
+		var err error
+		agentResult, err = resolveAndGetIssueWithRouting(ctx, store, agentArg)
+		if agentResult != nil {
+			defer agentResult.Close()
+		}
+		if err != nil {
+			return fmt.Errorf("failed to resolve agent %s: %w", agentArg, err)
+		}
+		if agentResult == nil || agentResult.Issue == nil {
+			return fmt.Errorf("failed to resolve agent %s: no issue found matching %q", agentArg, agentArg)
+		}
+		agentID = agentResult.ResolvedID
+	} else if daemonClient != nil {
 		resp, err := daemonClient.ResolveID(&rpc.ResolveIDArgs{ID: agentArg})
 		if err != nil {
 			return fmt.Errorf("failed to resolve agent %s: %w", agentArg, err)
@@ -349,7 +427,10 @@ func runSlotShow(cmd *cobra.Command, args []string) error {
 
 	// Get agent bead
 	var agent *types.Issue
-	if daemonClient != nil {
+	if agentResult != nil && agentResult.Issue != nil {
+		// Already have the agent from routing
+		agent = agentResult.Issue
+	} else if daemonClient != nil {
 		resp, err := daemonClient.Show(&rpc.ShowArgs{ID: agentID})
 		if err != nil {
 			return fmt.Errorf("agent bead not found: %s", agentID)
