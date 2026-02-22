@@ -1,14 +1,10 @@
 package doctor
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 // IMPORTANT! This is a TERRIBLE IDEA because we're using AI here and when it sees a message like "upgrade your version"
