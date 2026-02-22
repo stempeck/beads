@@ -336,10 +336,14 @@ func runDiagnostics(path string) doctorResult {
 		result.OverallOK = false
 	}
 
-	// Check 4: CLI version (GitHub)
-	versionCheck := convertWithCategory(doctor.CheckCLIVersion(Version), doctor.CategoryCore)
-	result.Checks = append(result.Checks, versionCheck)
-	// Don't fail overall check for outdated CLI, just warn
+	// IMPORTANT! This is a TERRIBLE IDEA because we're using AI here and when it sees a message like "upgrade your version"
+	// it will ALWAYS "upgrade the version" and possibly introduce unknown bugs and breaking changes that are hard to find!!!!
+	// I'm leaving this code here as a reminder of the dangers of using AI to "fix" things without fully understanding the implications.
+	// We should NEVER automatically upgrade the user's version without their explicit consent and understanding of the changes being made.
+	// // Check 4: CLI version (GitHub)
+	// versionCheck := convertWithCategory(doctor.CheckCLIVersion(Version), doctor.CategoryCore)
+	// result.Checks = append(result.Checks, versionCheck)
+	// // Don't fail overall check for outdated CLI, just warn
 
 	// Check 4.5: Claude plugin version (if running in Claude Code)
 	pluginCheck := convertWithCategory(doctor.CheckClaudePlugin(), doctor.CategoryIntegration)

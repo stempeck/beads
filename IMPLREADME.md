@@ -10,6 +10,34 @@ Details in: `./IMPLBEADS.md`
 ### scenario
 
 Problem: 
+  Gap 1: No formal bond in the cross-prefix case
+
+  In the same-prefix path, bd mol bond creates a bidirectional molecule linking wisp and target bead. In the cross-prefix path, that link doesn't exist — the   
+  relationship is implicit through formula variables. If downstream code (refinery, completion tracking) needs to traverse from wisp back to original bead, it  
+  has to parse variables instead of following bonds.
+
+  Gap 2: Asymmetric error handling
+
+  Same-prefix bond failure is fatal (return fmt.Errorf). Cross-prefix bd update failure is non-fatal (warning log, continues). The reviewer noted this asymmetry
+   is intentional but worth flagging.
+
+  Gap 3: No assignee on the original bead
+
+  In the cross-prefix path, the original bead gets --status=hooked but no --assignee. The wisp root gets both. Dashboard consumers can't see who's working on   
+  the original bead without tracing through to the wisp.
+
+  To close the gaps the reviewer identified, you'd need changes outside the scope of this fix:
+
+  1. Upstream bd CLI change: Make bd mol bond support cross-prefix routing (like bd show already does). This eliminates the workaround entirely — wisp and bead 
+  bond normally regardless of prefix. That's the real fix, but it's in a different codebase.
+  2. Explicit cross-prefix linking: Create a new metadata mechanism (e.g., bd update --linked-to=br-lsx on the wisp) so the relationship is queryable without   
+  parsing formula variables. This requires a bd feature addition.
+  3. Symmetric error handling: Make the cross-prefix bd update failure fatal too, or make the same-prefix bond failure non-fatal. Either way, align them. This  
+  is a design decision about how hard to fail.
+  4. Assignee propagation: Add --assignee to the cross-prefix bd update call on the original bead. This is the simplest fix — maybe a 2-line change — but the   
+  code review noted it's "likely intentional" since the wisp root is the actual work unit.
+
+A hack/fix was put in place that correctly solves the immediate gastown beads use problem to make: `gt sling mol-terraform-fix --on br-lsx <rig>` work, but it's a workaround for a limitation in bd mol bond, not a first-principles architectural fix. A 10/10 would require fixing bd itself so bond supports cross-prefix routing — making the entire workaround unnecessary.
 
 ---
 

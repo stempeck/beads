@@ -11,74 +11,82 @@ import (
 	"time"
 )
 
-// CheckCLIVersion checks if the CLI version is up to date.
-// Takes cliVersion parameter since it can't access the Version variable from main package.
-func CheckCLIVersion(cliVersion string) DoctorCheck {
-	latestVersion, err := fetchLatestGitHubRelease()
-	if err != nil {
-		// Network error or API issue - don't fail, just warn
-		return DoctorCheck{
-			Name:    "CLI Version",
-			Status:  StatusOK,
-			Message: fmt.Sprintf("%s (unable to check for updates)", cliVersion),
-		}
-	}
+// IMPORTANT! This is a TERRIBLE IDEA because we're using AI here and when it sees a message like "upgrade your version"
+// it will ALWAYS "upgrade the version" and possibly introduce unknown bugs and breaking changes that are hard to find!!!!
+// I'm leaving this code here as a reminder of the dangers of using AI to "fix" things without fully understanding the implications.
+// We should NEVER automatically upgrade the user's version without their explicit consent and understanding of the changes being made.
+// // CheckCLIVersion checks if the CLI version is up to date.
+// // Takes cliVersion parameter since it can't access the Version variable from main package.
+// func CheckCLIVersion(cliVersion string) DoctorCheck {
+// 	latestVersion, err := fetchLatestGitHubRelease()
+// 	if err != nil {
+// 		// Network error or API issue - don't fail, just warn
+// 		return DoctorCheck{
+// 			Name:    "CLI Version",
+// 			Status:  StatusOK,
+// 			Message: fmt.Sprintf("%s (unable to check for updates)", cliVersion),
+// 		}
+// 	}
 
-	if latestVersion == "" || latestVersion == cliVersion {
-		return DoctorCheck{
-			Name:    "CLI Version",
-			Status:  StatusOK,
-			Message: fmt.Sprintf("%s (latest)", cliVersion),
-		}
-	}
+// 	if latestVersion == "" || latestVersion == cliVersion {
+// 		return DoctorCheck{
+// 			Name:    "CLI Version",
+// 			Status:  StatusOK,
+// 			Message: fmt.Sprintf("%s (latest)", cliVersion),
+// 		}
+// 	}
 
-	// Compare versions using simple semver-aware comparison
-	if CompareVersions(latestVersion, cliVersion) > 0 {
-		upgradeCmd := getUpgradeCommand()
-		return DoctorCheck{
-			Name:    "CLI Version",
-			Status:  StatusWarning,
-			Message: fmt.Sprintf("%s (latest: %s)", cliVersion, latestVersion),
-			Fix:     fmt.Sprintf("Upgrade: %s", upgradeCmd),
-		}
-	}
+// 	//Compare versions using simple semver-aware comparison
+// 	if CompareVersions(latestVersion, cliVersion) > 0 {
+// 		upgradeCmd := getUpgradeCommand()
+// 		return DoctorCheck{
+// 			Name:    "CLI Version",
+// 			Status:  StatusWarning,
+// 			Message: fmt.Sprintf("%s (latest: %s)", cliVersion, latestVersion),
+// 			Fix:     fmt.Sprintf("Upgrade: %s", upgradeCmd),
+// 		}
+// 	}
 
-	return DoctorCheck{
-		Name:    "CLI Version",
-		Status:  StatusOK,
-		Message: fmt.Sprintf("%s (latest)", cliVersion),
-	}
-}
+// 	return DoctorCheck{
+// 		Name:    "CLI Version",
+// 		Status:  StatusOK,
+// 		Message: fmt.Sprintf("%s (latest)", cliVersion),
+// 	}
+// }
 
-// getUpgradeCommand returns the appropriate upgrade command based on how bd was installed.
-// Detects Homebrew on macOS/Linux, and falls back to the install script on all platforms.
-func getUpgradeCommand() string {
-	// Get the executable path
-	execPath, err := os.Executable()
-	if err != nil {
-		return "curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash"
-	}
+// IMPORTANT! This is a TERRIBLE IDEA because we're using AI here and when it sees a message like "upgrade your version"
+// it will ALWAYS "upgrade the version" and possibly introduce unknown bugs and breaking changes that are hard to find!!!!
+// I'm leaving this code here as a reminder of the dangers of using AI to "fix" things without fully understanding the implications.
+// We should NEVER automatically upgrade the user's version without their explicit consent and understanding of the changes being made.
+// // getUpgradeCommand returns the appropriate upgrade command based on how bd was installed.
+// // Detects Homebrew on macOS/Linux, and falls back to the install script on all platforms.
+// func getUpgradeCommand() string {
+// 	// Get the executable path
+// 	execPath, err := os.Executable()
+// 	if err != nil {
+// 		return "curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash"
+// 	}
 
-	// Resolve symlinks to get the real path
-	realPath, err := filepath.EvalSymlinks(execPath)
-	if err != nil {
-		realPath = execPath
-	}
+// 	// Resolve symlinks to get the real path
+// 	realPath, err := filepath.EvalSymlinks(execPath)
+// 	if err != nil {
+// 		realPath = execPath
+// 	}
 
-	// Normalize to lowercase for comparison
-	lowerPath := strings.ToLower(realPath)
+// 	// Normalize to lowercase for comparison
+// 	lowerPath := strings.ToLower(realPath)
 
-	// Check for Homebrew installation (macOS/Linux)
-	// Homebrew paths: /opt/homebrew/Cellar/bd, /usr/local/Cellar/bd, /home/linuxbrew/.linuxbrew/Cellar/bd
-	if strings.Contains(lowerPath, "/cellar/bd/") ||
-		strings.Contains(lowerPath, "/homebrew/") ||
-		strings.Contains(lowerPath, "/linuxbrew/") {
-		return "brew upgrade bd"
-	}
+// 	// Check for Homebrew installation (macOS/Linux)
+// 	// Homebrew paths: /opt/homebrew/Cellar/bd, /usr/local/Cellar/bd, /home/linuxbrew/.linuxbrew/Cellar/bd
+// 	if strings.Contains(lowerPath, "/cellar/bd/") ||
+// 		strings.Contains(lowerPath, "/homebrew/") ||
+// 		strings.Contains(lowerPath, "/linuxbrew/") {
+// 		return "brew upgrade bd"
+// 	}
 
-	// Default to install script (works on all platforms including Windows via WSL/Git Bash)
-	return "curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash"
-}
+// 	// Default to install script (works on all platforms including Windows via WSL/Git Bash)
+// 	return "curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash"
+// }
 
 // localVersionFile is the gitignored file that stores the last bd version used locally.
 // Must match the constant in version_tracking.go.
@@ -179,50 +187,54 @@ func CheckMetadataVersionTracking(path string, currentVersion string) DoctorChec
 	}
 }
 
-// fetchLatestGitHubRelease fetches the latest release version from GitHub API.
-func fetchLatestGitHubRelease() (string, error) {
-	url := "https://api.github.com/repos/steveyegge/beads/releases/latest"
+// IMPORTANT! This is a TERRIBLE IDEA because we're using AI here and when it sees a message like "upgrade your version"
+// it will ALWAYS "upgrade the version" and possibly introduce unknown bugs and breaking changes that are hard to find!!!!
+// I'm leaving this code here as a reminder of the dangers of using AI to "fix" things without fully understanding the implications.
+// We should NEVER automatically upgrade the user's version without their explicit consent and understanding of the changes being made.
+// // fetchLatestGitHubRelease fetches the latest release version from GitHub API.
+// func fetchLatestGitHubRelease() (string, error) {
+// 	url := "https://api.github.com/repos/steveyegge/beads/releases/latest"
 
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
+// 	client := &http.Client{
+// 		Timeout: 5 * time.Second,
+// 	}
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
+// 	req, err := http.NewRequest("GET", url, nil)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	// Set User-Agent as required by GitHub API
-	req.Header.Set("User-Agent", "beads-cli-doctor")
+// 	// Set User-Agent as required by GitHub API
+// 	req.Header.Set("User-Agent", "beads-cli-doctor")
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer func() { _ = resp.Body.Close() }()
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("github api returned status %d", resp.StatusCode)
-	}
+// 	if resp.StatusCode != http.StatusOK {
+// 		return "", fmt.Errorf("github api returned status %d", resp.StatusCode)
+// 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+// 	body, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	var release struct {
-		TagName string `json:"tag_name"`
-	}
+// 	var release struct {
+// 		TagName string `json:"tag_name"`
+// 	}
 
-	if err := json.Unmarshal(body, &release); err != nil {
-		return "", err
-	}
+// 	if err := json.Unmarshal(body, &release); err != nil {
+// 		return "", err
+// 	}
 
-	// Strip 'v' prefix if present
-	version := strings.TrimPrefix(release.TagName, "v")
+// 	// Strip 'v' prefix if present
+// 	version := strings.TrimPrefix(release.TagName, "v")
 
-	return version, nil
-}
+// 	return version, nil
+// }
 
 // CompareVersions compares two semantic version strings.
 // Returns: -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2
