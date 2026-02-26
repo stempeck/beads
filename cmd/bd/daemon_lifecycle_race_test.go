@@ -706,7 +706,7 @@ func TestEventLoopConcurrentAccess(t *testing.T) {
 	wg.Wait()
 	<-loopCtx.Done()
 
-	if syncCount == 0 {
+	if atomic.LoadInt32(&syncCount) == 0 {
 		t.Error("Event loop sync function was never called")
 	}
 }

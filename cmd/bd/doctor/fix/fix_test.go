@@ -45,14 +45,19 @@ func setupTestGitRepo(t *testing.T) string {
 	return dir
 }
 
-// runGit runs a git command and returns output
+// runGit runs a git command and returns stdout only (ignores stderr warnings)
 func runGit(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
-	output, err := cmd.CombinedOutput()
+	output, err := cmd.Output()
 	if err != nil {
-		t.Logf("git %v: %s", args, output)
+		// Log stderr from ExitError if available
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			t.Logf("git %v failed: %v\nstderr: %s", args, err, exitErr.Stderr)
+		} else {
+			t.Logf("git %v failed: %v", args, err)
+		}
 	}
 	return string(output)
 }

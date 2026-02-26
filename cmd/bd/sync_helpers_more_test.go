@@ -95,9 +95,9 @@ func TestGitCommitBeadsDir_PathspecDoesNotCommitOtherStagedFiles(t *testing.T) {
 	}
 
 	// other.txt should still be staged after the beads-only commit.
-	out, err := exec.Command("git", "diff", "--cached", "--name-only").CombinedOutput()
+	out, err := exec.Command("git", "diff", "--cached", "--name-only").Output()
 	if err != nil {
-		t.Fatalf("git diff --cached: %v\n%s", err, out)
+		t.Fatalf("git diff --cached: %v", err)
 	}
 	if strings.TrimSpace(string(out)) != "other.txt" {
 		t.Fatalf("expected other.txt still staged, got: %q", out)
