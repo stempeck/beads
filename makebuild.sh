@@ -28,10 +28,15 @@ LDFLAGS="$LDFLAGS -X main.Build=${BUILD}"
 LDFLAGS="$LDFLAGS -X main.Commit=${COMMIT}"
 LDFLAGS="$LDFLAGS -X main.Branch=${BRANCH}"
 
-echo "==> Building bd ${VERSION} (${BRANCH}@${BUILD})..."
-CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o ./bd ./cmd/bd
+# Target Linux with matching architecture for Docker containers
+# macOS (Apple Silicon) -> linux/arm64, Linux -> linux/amd64
+if [[ "$(uname)" == "Darwin" ]]; then
+  TARGET_ARCH="arm64"
+else
+  TARGET_ARCH="amd64"
+fi
 
-echo "==> Verifying..."
-./bd version
+echo "==> Building bd ${VERSION} (${BRANCH}@${BUILD}) [linux/${TARGET_ARCH}]..."
+CGO_ENABLED=0 GOOS=linux GOARCH="$TARGET_ARCH" go build -ldflags="$LDFLAGS" -o ./bd ./cmd/bd
 
-echo "==> Done. ./bd is ready."
+echo "==> Done. ./bd is ready (linux/${TARGET_ARCH} — for Docker containers)."
