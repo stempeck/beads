@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+// chmodFunc is the chmod implementation used by Start(). Package-level var
+// so tests can inject failures (e.g., simulating Docker Desktop fakeowner EINVAL).
+var chmodFunc = os.Chmod
+
 // Start starts the RPC server and listens for connections
 func (s *Server) Start(_ context.Context) error {
 	if err := s.ensureSocketDir(); err != nil {
@@ -31,11 +35,14 @@ func (s *Server) Start(_ context.Context) error {
 	}
 	s.listener = listener
 
-	// Set socket permissions to 0600 for security (owner only)
+	// Set socket permissions to 0600 for security (owner only).
+	// Non-fatal: on fakeowner filesystems (Docker Desktop host mounts),
+	// chmod on Unix sockets returns EINVAL. The daemon continues with
+	// default permissions. Docker containers are single-user so this
+	// is acceptable. See .designs/daemon-fakeowner-fix/security.md.
 	if runtime.GOOS != "windows" {
-		if err := os.Chmod(s.socketPath, 0600); err != nil {
-			_ = listener.Close()
-			return fmt.Errorf("failed to set socket permissions: %w", err)
+		if err := chmodFunc(s.socketPath, 0600); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not set socket permissions to 0600 (filesystem may not support chmod on sockets): %v\n", err)
 		}
 	}
 
